@@ -85,6 +85,35 @@ export async function getB2SignedDownloadUrl(storagePath, originalFileName, expi
 }
 
 /**
+ * Upload text/XML content (like iOS manifest.plist) directly to Backblaze B2
+ */
+export async function uploadTextToB2(content, storagePath, contentType = 'text/xml') {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(content)
+  const command = new PutObjectCommand({
+    Bucket: B2_BUCKET,
+    Key: storagePath,
+    Body: data,
+    ContentType: contentType,
+  })
+
+  return await s3Client.send(command)
+}
+
+/**
+ * Generate a presigned URL for the iOS Manifest .plist file (served as text/xml)
+ */
+export async function getB2SignedManifestUrl(storagePath, expiresInSeconds = 3600) {
+  const command = new GetObjectCommand({
+    Bucket: B2_BUCKET,
+    Key: storagePath,
+    ResponseContentType: 'text/xml',
+  })
+
+  return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds })
+}
+
+/**
  * Delete a file from Backblaze B2
  */
 export async function deleteFileFromB2(storagePath) {
@@ -95,3 +124,4 @@ export async function deleteFileFromB2(storagePath) {
 
   return await s3Client.send(command)
 }
+

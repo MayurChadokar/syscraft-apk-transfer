@@ -88,7 +88,7 @@ export async function getApkBySlug(slug) {
 }
 
 /**
- * Generate a signed download URL for the APK from Backblaze B2
+ * Generate a signed download URL for the APK/IPA from Backblaze B2
  * Validates expiration BEFORE generating
  */
 export async function getSignedDownloadUrl(slug) {
@@ -109,7 +109,54 @@ export async function getSignedDownloadUrl(slug) {
   // Generate signed URL from Backblaze B2 (1 hour expiration)
   try {
     const signedUrl = await getB2SignedDownloadUrl(record.storage_path, record.original_file_name, 3600)
-    return { signedUrl, record }
+    
+    // For iOS (.ipa) files, generate a public HTTPS manifest.plist on Backblaze B2
+    let manifestSignedUrl = null
+    const isIpa = record.original_file_name?.toLowerCase().endsWith('.ipa') || record.platform === 'ios'
+
+    if (isIpa) {
+      const plistPath = record.storage_path.replace(/\.ipa$/i, '.plist')
+      const safeAppName = (record.app_name || 'App').replace(/[^\w\s-]/gi, '')
+      const bundleId = `com.syscraft.${(record.slug || 'app').replace(/[^a-zA-Z0-9]/g, '')}`
+
+      const manifestXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>items</key>
+  <array>
+    <dict>
+      <key>assets</key>
+      <array>
+        <dict>
+          <key>kind</key>
+          <string>software-package</string>
+          <key>url</key>
+          <string>${signedUrl}</string>
+        </dict>
+      </array>
+      <key>metadata</key>
+      <dict>
+        <key>bundle-identifier</key>
+        <string>${bundleId}</string>
+        <key>bundle-version</key>
+        <string>1.0.0</string>
+        <key>kind</key>
+        <string>software</string>
+        <key>title</key>
+        <string>${safeAppName}</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>`
+
+      // Upload plist to B2 and get signed HTTPS URL
+      await uploadTextToB2(manifestXml, plistPath, 'text/xml')
+      manifestSignedUrl = await getB2SignedManifestUrl(plistPath, 3600)
+    }
+
+    return { signedUrl, manifestSignedUrl, record }
   } catch (error) {
     throw new Error(`Failed to generate download URL: ${error.message}`)
   }

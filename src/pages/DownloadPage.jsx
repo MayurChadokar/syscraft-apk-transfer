@@ -131,46 +131,13 @@ export default function DownloadPage() {
     setDownloading(true)
     try {
       const result = await getSignedDownloadUrl(slug)
-      if (result.error || !result.signedUrl) return
+      if (result.error || !result.manifestSignedUrl) {
+        console.error('Failed to generate iOS Manifest URL:', result)
+        return
+      }
 
-      const safeAppName = (apk.app_name || 'App').replace(/[^\w\s-]/gi, '')
-      const bundleId = `com.syscraft.${(apk.slug || 'app').replace(/[^a-zA-Z0-9]/g, '')}`
-
-      const manifestXml = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>items</key>
-  <array>
-    <dict>
-      <key>assets</key>
-      <array>
-        <dict>
-          <key>kind</key>
-          <string>software-package</string>
-          <key>url</key>
-          <string>${result.signedUrl}</string>
-        </dict>
-      </array>
-      <key>metadata</key>
-      <dict>
-        <key>bundle-identifier</key>
-        <string>${bundleId}</string>
-        <key>bundle-version</key>
-        <string>1.0.0</string>
-        <key>kind</key>
-        <string>software</string>
-        <key>title</key>
-        <string>${safeAppName}</string>
-      </dict>
-    </dict>
-  </array>
-</dict>
-</plist>`
-
-      const blob = new Blob([manifestXml], { type: 'text/xml' })
-      const manifestUrl = URL.createObjectURL(blob)
-      window.location.href = `itms-services://?action=download-manifest&url=${encodeURIComponent(manifestUrl)}`
+      // Redirect Safari to real HTTPS Backblaze B2 Manifest URL
+      window.location.href = `itms-services://?action=download-manifest&url=${encodeURIComponent(result.manifestSignedUrl)}`
 
       setApk(prev => ({ ...prev, download_count: (prev?.download_count || 0) + 1 }))
     } catch (err) {
@@ -179,6 +146,7 @@ export default function DownloadPage() {
       setDownloading(false)
     }
   }
+
 
 
   if (loading) return <LoadingSkeleton />
