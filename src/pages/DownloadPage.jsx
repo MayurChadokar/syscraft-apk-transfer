@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   Download, Calendar, HardDrive, Loader2, AlertTriangle,
-  Clock, Shield, Smartphone
+  Clock, Shield, Smartphone, Apple, Zap, HelpCircle
 } from 'lucide-react'
 import { getApkBySlug, getSignedDownloadUrl } from '../lib/apkService'
 import { formatFileSize, formatDate, formatTimeLeft, isExpired } from '../lib/utils'
+import UDIDModal from '../components/apk/UDIDModal'
+
 
 function BrandFooter() {
   return (
@@ -89,6 +91,8 @@ export default function DownloadPage() {
     return () => clearInterval(interval)
   }, [status, apk])
 
+  const [showUDIDModal, setShowUDIDModal] = useState(false)
+
   const handleDownload = async () => {
     if (downloading) return
     setDownloading(true)
@@ -121,6 +125,61 @@ export default function DownloadPage() {
       setDownloading(false)
     }
   }
+
+  const handleIOSInstall = async () => {
+    if (downloading) return
+    setDownloading(true)
+    try {
+      const result = await getSignedDownloadUrl(slug)
+      if (result.error || !result.signedUrl) return
+
+      const safeAppName = (apk.app_name || 'App').replace(/[^\w\s-]/gi, '')
+      const bundleId = `com.syscraft.${(apk.slug || 'app').replace(/[^a-zA-Z0-9]/g, '')}`
+
+      const manifestXml = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>items</key>
+  <array>
+    <dict>
+      <key>assets</key>
+      <array>
+        <dict>
+          <key>kind</key>
+          <string>software-package</string>
+          <key>url</key>
+          <string>${result.signedUrl}</string>
+        </dict>
+      </array>
+      <key>metadata</key>
+      <dict>
+        <key>bundle-identifier</key>
+        <string>${bundleId}</string>
+        <key>bundle-version</key>
+        <string>1.0.0</string>
+        <key>kind</key>
+        <string>software</string>
+        <key>title</key>
+        <string>${safeAppName}</string>
+      </dict>
+    </dict>
+  </array>
+</dict>
+</plist>`
+
+      const blob = new Blob([manifestXml], { type: 'text/xml' })
+      const manifestUrl = URL.createObjectURL(blob)
+      window.location.href = `itms-services://?action=download-manifest&url=${encodeURIComponent(manifestUrl)}`
+
+      setApk(prev => ({ ...prev, download_count: (prev?.download_count || 0) + 1 }))
+    } catch (err) {
+      console.error('iOS OTA Install error:', err)
+    } finally {
+      setDownloading(false)
+    }
+  }
+
 
   if (loading) return <LoadingSkeleton />
 
@@ -270,28 +329,72 @@ export default function DownloadPage() {
           </div>
         </div>
 
-        {/* Download Buttons */}
+        {/* Download / Install Buttons */}
         <div className="space-y-3">
+          {apk.original_file_name?.toLowerCase().endsWith('.ipa') || apk.platform === 'ios' ? (
+            <>
+              {/* Primary iOS OTA Native Installer */}
+              <button
+                onClick={handleIOSInstall}
+                disabled={downloading}
+                className="btn-primary w-full py-4 text-base font-semibold glow-blue flex items-center justify-center gap-2"
+                id="install-ios-btn"
+              >
+                {downloading ? (
+                  <>
+                    <Loader2 size={18} className="animate-spin" />
+                    Preparing iOS OTA Manifest...
+                  </>
+                ) : (
+                  <>
+                    <Zap size={18} className="text-amber-300" />
+                    Install on iPhone (OTA)
+                  </>
+                )}
+              </button>
+
+              {/* Secondary Direct IPA File Download */}
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="btn-secondary w-full py-3 text-sm font-medium flex items-center justify-center gap-2"
+                id="download-ipa-btn"
+              >
+                <Download size={15} />
+                Download .IPA File Directly
+              </button>
+            </>
+          ) : (
+            /* Android APK Download Button */
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="btn-primary w-full py-4 text-base font-semibold glow-blue flex items-center justify-center gap-2"
+              id="download-apk-btn"
+            >
+              {downloading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Preparing download...
+                </>
+              ) : (
+                <>
+                  <Download size={18} />
+                  Download APK
+                </>
+              )}
+            </button>
+          )}
+
+          {/* UDID / Install Guide Trigger */}
           <button
-            onClick={handleDownload}
-            disabled={downloading}
-            className="btn-primary w-full py-4 text-base font-semibold glow-blue flex items-center justify-center gap-2"
-            id="download-apk-btn"
+            onClick={() => setShowUDIDModal(true)}
+            className="w-full text-center text-xs text-white/40 hover:text-white/80 py-1 transition-colors flex items-center justify-center gap-1.5"
           >
-            {downloading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Preparing download...
-              </>
-            ) : (
-              <>
-                <Download size={18} />
-                {apk.original_file_name?.endsWith('.ipa') ? 'Download iOS App (.ipa)' : 'Download APK'}
-              </>
-            )}
+            <HelpCircle size={13} />
+            <span>iOS Installation & UDID Guide</span>
           </button>
         </div>
-
 
         {/* Security note */}
         <div className="flex items-center gap-2 justify-center text-white/25 text-xs">
@@ -300,7 +403,14 @@ export default function DownloadPage() {
         </div>
       </div>
 
+      {/* UDID Modal */}
+      <UDIDModal
+        isOpen={showUDIDModal}
+        onClose={() => setShowUDIDModal(false)}
+      />
+
       <BrandFooter />
     </div>
   )
 }
+
