@@ -131,9 +131,6 @@ export default function DownloadPage() {
     setDownloading(true)
     try {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
-      if (!isIOS) {
-        toast('iOS OTA installation works on iPhones/iPads using Safari. Downloading .IPA file directly...', { icon: '🍏', duration: 4000 })
-      }
 
       const result = await getSignedDownloadUrl(slug)
       if (result.error || !result.manifestSignedUrl) {
@@ -141,24 +138,22 @@ export default function DownloadPage() {
         return
       }
 
-      // Trigger Apple itms-services protocol
       const otaUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(result.manifestSignedUrl)}`
-      const a = document.createElement('a')
-      a.href = otaUrl
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-
-      // Fallback direct download if non-iOS
-      if (!isIOS && result.signedUrl) {
-        const link = document.createElement('a')
-        link.href = result.signedUrl
-        link.download = apk.original_file_name
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
+      
+      if (isIOS) {
+        // Direct location change for Safari iOS protocol handler compatibility
+        window.location.href = otaUrl
+        toast.success('iOS Install prompt triggered! Tap "Install" on popup.')
       } else {
-        toast.success('iOS Install prompt sent! Check your iPhone screen.')
+        toast('iOS OTA installation works on iPhones/iPads using Safari. Downloading .IPA file directly...', { icon: '🍏', duration: 4000 })
+        if (result.signedUrl) {
+          const link = document.createElement('a')
+          link.href = result.signedUrl
+          link.download = apk.original_file_name
+          document.body.appendChild(link)
+          link.click()
+          document.body.removeChild(link)
+        }
       }
 
       setApk(prev => ({ ...prev, download_count: (prev?.download_count || 0) + 1 }))
@@ -169,6 +164,7 @@ export default function DownloadPage() {
       setDownloading(false)
     }
   }
+
 
 
 

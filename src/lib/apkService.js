@@ -115,9 +115,12 @@ export async function getSignedDownloadUrl(slug) {
     const isIpa = record.original_file_name?.toLowerCase().endsWith('.ipa') || record.platform === 'ios'
 
     if (isIpa) {
-      const plistPath = record.storage_path.replace(/\.ipa$/i, '.plist')
+      const lastDotIndex = record.storage_path.lastIndexOf('.')
+      const basePath = lastDotIndex !== -1 ? record.storage_path.substring(0, lastDotIndex) : record.storage_path
+      const plistPath = `${basePath}.plist`
       const safeAppName = (record.app_name || 'App').replace(/[^\w\s-]/gi, '')
       const bundleId = `com.syscraft.${(record.slug || 'app').replace(/[^a-zA-Z0-9]/g, '')}`
+
 
       const manifestXml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
