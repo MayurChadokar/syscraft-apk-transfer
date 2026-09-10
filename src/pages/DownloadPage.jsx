@@ -130,6 +130,11 @@ export default function DownloadPage() {
     setDownloading(true)
     try {
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+      const isSafari = /Safari/i.test(navigator.userAgent) && !/CriOS|FxIOS|EdgiOS/i.test(navigator.userAgent)
+
+      if (isIOS && !isSafari) {
+        toast('Apple restricts direct App installation to SAFARI browser. Please copy and open this link in SAFARI!', { icon: '🧭', duration: 6000 })
+      }
 
       const result = await getSignedDownloadUrl(slug)
       if (result.error || !result.manifestSignedUrl) {
@@ -144,6 +149,7 @@ export default function DownloadPage() {
         window.location.href = otaUrl
         toast.success('iOS Install prompt triggered! Tap "Install" on popup.')
       } else {
+
         toast('iOS OTA installation works on iPhones/iPads using Safari. Downloading .IPA file directly...', { icon: '🍏', duration: 4000 })
         if (result.signedUrl) {
           const link = document.createElement('a')
