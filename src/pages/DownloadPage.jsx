@@ -7,6 +7,8 @@ import {
 import { getApkBySlug, getSignedDownloadUrl } from '../lib/apkService'
 import { formatFileSize, formatDate, formatTimeLeft, isExpired } from '../lib/utils'
 import UDIDModal from '../components/apk/UDIDModal'
+import toast from 'react-hot-toast'
+
 
 
 function BrandFooter() {
@@ -124,28 +126,50 @@ export default function DownloadPage() {
     } finally {
       setDownloading(false)
     }
-  }
-
   const handleIOSInstall = async () => {
     if (downloading) return
     setDownloading(true)
     try {
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream
+      if (!isIOS) {
+        toast('iOS OTA installation works on iPhones/iPads using Safari. Downloading .IPA file directly...', { icon: '🍏', duration: 4000 })
+      }
+
       const result = await getSignedDownloadUrl(slug)
       if (result.error || !result.manifestSignedUrl) {
-        console.error('Failed to generate iOS Manifest URL:', result)
+        toast.error('Failed to generate iOS installation manifest')
         return
       }
 
-      // Redirect Safari to real HTTPS Backblaze B2 Manifest URL
-      window.location.href = `itms-services://?action=download-manifest&url=${encodeURIComponent(result.manifestSignedUrl)}`
+      // Trigger Apple itms-services protocol
+      const otaUrl = `itms-services://?action=download-manifest&url=${encodeURIComponent(result.manifestSignedUrl)}`
+      const a = document.createElement('a')
+      a.href = otaUrl
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+
+      // Fallback direct download if non-iOS
+      if (!isIOS && result.signedUrl) {
+        const link = document.createElement('a')
+        link.href = result.signedUrl
+        link.download = apk.original_file_name
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+      } else {
+        toast.success('iOS Install prompt sent! Check your iPhone screen.')
+      }
 
       setApk(prev => ({ ...prev, download_count: (prev?.download_count || 0) + 1 }))
     } catch (err) {
       console.error('iOS OTA Install error:', err)
+      toast.error(err.message || 'Failed to start iOS installation')
     } finally {
       setDownloading(false)
     }
   }
+
 
 
 

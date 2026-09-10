@@ -17,8 +17,10 @@ CREATE TABLE IF NOT EXISTS public.apk_files (
   created_at         TIMESTAMPTZ  DEFAULT now(),
   expires_at         TIMESTAMPTZ  NOT NULL,
   download_count     INTEGER      DEFAULT 0,
-  status             TEXT         DEFAULT 'active'
+  status             TEXT         DEFAULT 'active',
+  platform           TEXT         DEFAULT 'android'
 );
+
 
 -- ---------------------------------------------------------------
 -- STEP 2: Indexes for fast lookups
