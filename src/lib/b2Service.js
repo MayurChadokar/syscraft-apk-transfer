@@ -24,7 +24,10 @@ export const s3Client = new S3Client({
  * Upload an APK file directly to Backblaze B2 using Presigned PUT URL + XHR progress tracking
  */
 export async function uploadFileToB2(file, storagePath, onProgress) {
-  const contentType = 'application/vnd.android.package-archive'
+  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase()
+  const contentType = ext === '.ipa' 
+    ? 'application/octet-stream' 
+    : 'application/vnd.android.package-archive'
   
   // Step 1: Generate Presigned PUT URL
   const command = new PutObjectCommand({

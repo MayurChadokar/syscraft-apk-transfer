@@ -32,8 +32,10 @@ export default function UploadCard({ onSuccess }) {
   const fileInputRef = useRef(null)
 
   const validateFile = (f) => {
-    if (!f.name.toLowerCase().endsWith('.apk')) {
-      return 'Only .apk files are allowed'
+    const isApk = f.name.toLowerCase().endsWith('.apk')
+    const isIpa = f.name.toLowerCase().endsWith('.ipa')
+    if (!isApk && !isIpa) {
+      return 'Only .apk (Android) or .ipa (iOS) files are allowed'
     }
     if (f.size > 500 * 1024 * 1024) {
       return 'File size must be under 500 MB'
@@ -240,14 +242,14 @@ export default function UploadCard({ onSuccess }) {
             >
               <Upload size={28} className={`mx-auto mb-3 ${dragging ? 'text-brand-400' : 'text-white/20'}`} />
               <p className="text-white/60 text-sm font-medium">
-                {dragging ? 'Drop your APK here' : 'Drop your APK here'}
+                {dragging ? 'Drop your APK or IPA file here' : 'Drop your APK or IPA file here'}
               </p>
               <p className="text-white/30 text-xs mt-1">or <span className="text-brand-400 hover:underline">browse files</span></p>
-              <p className="text-white/20 text-xs mt-3">Only .apk files · Max 500 MB</p>
+              <p className="text-white/20 text-xs mt-3">Supports .apk (Android) & .ipa (iOS) · Max 500 MB</p>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".apk"
+                accept=".apk,.ipa"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files[0]
@@ -255,6 +257,7 @@ export default function UploadCard({ onSuccess }) {
                   e.target.value = ''
                 }}
               />
+
             </div>
           )}
           {errors.file && (

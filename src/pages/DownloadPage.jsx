@@ -208,14 +208,19 @@ export default function DownloadPage() {
       </div>
 
       <div className="w-full max-w-sm relative z-10 animate-slide-up space-y-5">
-        {/* APK Icon */}
+        {/* App Icon & Badge */}
         <div className="flex flex-col items-center gap-4">
-          <div className="w-24 h-24 rounded-3xl bg-brand-600/15 border border-brand-500/20 flex items-center justify-center shadow-xl shadow-brand-600/10">
+          <div className="w-24 h-24 rounded-3xl bg-brand-600/15 border border-brand-500/20 flex items-center justify-center shadow-xl shadow-brand-600/10 relative">
             <Smartphone size={44} className="text-brand-400" />
+            <div className="absolute -top-2 -right-2 px-2.5 py-1 rounded-full bg-navy-800 border border-white/10 text-xs font-semibold text-white flex items-center gap-1 shadow-lg">
+              {apk.platform === 'ios' || apk.original_file_name?.endsWith('.ipa') ? '🍏 iOS' : '🤖 Android'}
+            </div>
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold text-white">{apk.app_name}</h1>
-            <p className="text-white/40 text-sm mt-1">Android Application</p>
+            <p className="text-white/40 text-sm mt-1">
+              {apk.platform === 'ios' || apk.original_file_name?.endsWith('.ipa') ? 'iOS Application (.ipa)' : 'Android Application (.apk)'}
+            </p>
           </div>
         </div>
 
@@ -229,7 +234,11 @@ export default function DownloadPage() {
             <div>
               <p className="text-white/30 text-xs">File</p>
               <p className="text-white/80 text-sm">{apk.original_file_name}</p>
-              {apk.file_size && <p className="text-white/40 text-xs">APK · {formatFileSize(apk.file_size)}</p>}
+              {apk.file_size && (
+                <p className="text-white/40 text-xs">
+                  {apk.original_file_name?.endsWith('.ipa') ? 'IPA' : 'APK'} · {formatFileSize(apk.file_size)}
+                </p>
+              )}
             </div>
           </div>
 
@@ -261,25 +270,28 @@ export default function DownloadPage() {
           </div>
         </div>
 
-        {/* Download Button */}
-        <button
-          onClick={handleDownload}
-          disabled={downloading}
-          className="btn-primary w-full py-4 text-base font-semibold glow-blue"
-          id="download-apk-btn"
-        >
-          {downloading ? (
-            <>
-              <Loader2 size={18} className="animate-spin" />
-              Preparing download...
-            </>
-          ) : (
-            <>
-              <Download size={18} />
-              Download APK
-            </>
-          )}
-        </button>
+        {/* Download Buttons */}
+        <div className="space-y-3">
+          <button
+            onClick={handleDownload}
+            disabled={downloading}
+            className="btn-primary w-full py-4 text-base font-semibold glow-blue flex items-center justify-center gap-2"
+            id="download-apk-btn"
+          >
+            {downloading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Preparing download...
+              </>
+            ) : (
+              <>
+                <Download size={18} />
+                {apk.original_file_name?.endsWith('.ipa') ? 'Download iOS App (.ipa)' : 'Download APK'}
+              </>
+            )}
+          </button>
+        </div>
+
 
         {/* Security note */}
         <div className="flex items-center gap-2 justify-center text-white/25 text-xs">

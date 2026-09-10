@@ -7,7 +7,9 @@ import { uploadFileToB2, getB2SignedDownloadUrl, deleteFileFromB2 } from './b2Se
  */
 export async function uploadApk({ appName, file, validity, customDate, userId, onProgress }) {
   // Step 1: Generate unique storage path
-  const ext = '.apk'
+  const isIpa = file.name.toLowerCase().endsWith('.ipa')
+  const ext = isIpa ? '.ipa' : '.apk'
+  const platform = isIpa ? 'ios' : 'android'
   const uniqueId = crypto.randomUUID()
   const storagePath = `${userId}/${uniqueId}${ext}`
 
@@ -37,6 +39,7 @@ export async function uploadApk({ appName, file, validity, customDate, userId, o
         expires_at: expiresAt,
         download_count: 0,
         status: 'active',
+        platform,
       },
     ])
     .select()
@@ -73,7 +76,7 @@ export async function getUserApks() {
 export async function getApkBySlug(slug) {
   const { data, error } = await supabase
     .from('apk_files')
-    .select('id, app_name, original_file_name, file_size, expires_at, download_count, slug, storage_path')
+    .select('*')
     .eq('slug', slug)
     .single()
 

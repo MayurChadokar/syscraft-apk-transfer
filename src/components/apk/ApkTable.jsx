@@ -43,11 +43,17 @@ function ApkRow({ apk, onDelete, onShowQR }) {
               <Package size={15} className="text-brand-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-white text-sm font-medium truncate">{apk.app_name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-white text-sm font-medium truncate">{apk.app_name}</p>
+                <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-white/[0.06] text-white/60 border border-white/10 flex-shrink-0">
+                  {apk.platform === 'ios' || apk.original_file_name?.endsWith('.ipa') ? '🍏 iOS' : '🤖 Android'}
+                </span>
+              </div>
               <p className="text-white/30 text-xs truncate">{apk.original_file_name}</p>
             </div>
           </div>
         </td>
+
         <td className="px-4 py-4 text-white/50 text-xs hidden md:table-cell">
           {formatFileSize(apk.file_size)}
         </td>
