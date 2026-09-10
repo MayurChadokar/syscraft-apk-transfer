@@ -85,6 +85,20 @@ export async function getB2SignedDownloadUrl(storagePath, originalFileName, expi
 }
 
 /**
+ * Generate a raw presigned URL for iOS OTA package download (served as application/octet-stream without attachment header)
+ */
+export async function getB2SignedRawUrl(storagePath, expiresInSeconds = 3600) {
+  const command = new GetObjectCommand({
+    Bucket: B2_BUCKET,
+    Key: storagePath,
+    ResponseContentType: 'application/octet-stream',
+  })
+
+  return await getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds })
+}
+
+
+/**
  * Upload text/XML content (like iOS manifest.plist) directly to Backblaze B2
  */
 export async function uploadTextToB2(content, storagePath, contentType = 'text/xml') {
