@@ -9,8 +9,6 @@ import { formatFileSize, formatDate, formatTimeLeft, isExpired } from '../lib/ut
 import UDIDModal from '../components/apk/UDIDModal'
 import toast from 'react-hot-toast'
 
-
-
 function BrandFooter() {
   return (
     <div className="flex items-center justify-center gap-2 mt-8">
@@ -52,6 +50,7 @@ export default function DownloadPage() {
   const [downloading, setDownloading] = useState(false)
   const [status, setStatus] = useState('loading') // loading | valid | expired | not_found | error
   const [timeLeft, setTimeLeft] = useState('')
+  const [showUDIDModal, setShowUDIDModal] = useState(false)
 
   useEffect(() => {
     const fetchApk = async () => {
@@ -93,8 +92,6 @@ export default function DownloadPage() {
     return () => clearInterval(interval)
   }, [status, apk])
 
-  const [showUDIDModal, setShowUDIDModal] = useState(false)
-
   const handleDownload = async () => {
     if (downloading) return
     setDownloading(true)
@@ -126,6 +123,8 @@ export default function DownloadPage() {
     } finally {
       setDownloading(false)
     }
+  }
+
   const handleIOSInstall = async () => {
     if (downloading) return
     setDownloading(true)
@@ -164,10 +163,6 @@ export default function DownloadPage() {
       setDownloading(false)
     }
   }
-
-
-
-
 
   if (loading) return <LoadingSkeleton />
 
@@ -401,4 +396,3 @@ export default function DownloadPage() {
     </div>
   )
 }
-
