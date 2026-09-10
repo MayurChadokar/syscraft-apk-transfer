@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { generateSlug, getExpiresAt, getDownloadUrl } from './utils'
-import { uploadFileToB2, getB2SignedDownloadUrl, deleteFileFromB2 } from './b2Service'
+import { uploadFileToB2, getB2SignedDownloadUrl, uploadTextToB2, getB2SignedManifestUrl, deleteFileFromB2 } from './b2Service'
+
 
 /**
  * Upload APK file to Backblaze B2 Storage and create database record in Supabase
