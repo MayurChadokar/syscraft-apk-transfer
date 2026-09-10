@@ -122,6 +122,9 @@ export async function getSignedDownloadUrl(slug) {
       const safeAppName = (record.app_name || 'App').replace(/[^\w\s-]/gi, '')
       const bundleId = `com.syscraft.${(record.slug || 'app').replace(/[^a-zA-Z0-9]/g, '')}`
 
+      // Get raw package URL (without forced attachment header) and XML escape ampersands for Apple's PLIST parser
+      const rawIpaSignedUrl = await getB2SignedRawUrl(record.storage_path, 3600)
+      const xmlEscapedIpaUrl = rawIpaSignedUrl.replace(/&/g, '&amp;')
 
       const manifestXml = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -136,7 +139,7 @@ export async function getSignedDownloadUrl(slug) {
           <key>kind</key>
           <string>software-package</string>
           <key>url</key>
-          <string>${signedUrl}</string>
+          <string>${xmlEscapedIpaUrl}</string>
         </dict>
       </array>
       <key>metadata</key>
